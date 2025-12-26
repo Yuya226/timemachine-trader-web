@@ -24,6 +24,19 @@
 <script>
 let chartInstance = null;
 
+// 装備中のインジケーターIDのリスト
+const equippedIndicatorIds = {{ equipped_indicators | map(attribute='id') | list | tojson }};
+
+// インジケーターIDとデータセットのマッピング
+const indicatorMapping = {
+    'line-chart': null, // 基本チャート（常に表示）
+    'candlestick': null, // ローソク足（基本チャートで表示）
+    'moving-average': ['sma_25', 'sma_75'],
+    'macd': ['macd', 'macd_signal', 'macd_hist'],
+    'rsi': ['rsi_14'],
+    'bollinger': ['bb_upper', 'bb_middle', 'bb_lower']
+};
+
 function updateChart(data) {
     const ctx = document.getElementById('priceChart').getContext('2d');
 
@@ -34,27 +47,164 @@ function updateChart(data) {
     const labels = data.map(d => d.date);
     const prices = data.map(d => d.close);
 
+    // データセットを構築
+    const datasets = [];
+
+    // 基本チャート（終値）は常に表示
+    datasets.push({
+        label: '終値',
+        data: prices,
+        borderColor: '#6366F1',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.1,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        yAxisID: 'y',
+        order: 0
+    });
+
+    // 装備中のインジケーターを追加
+    equippedIndicatorIds.forEach(indicatorId => {
+        const fields = indicatorMapping[indicatorId];
+        if (!fields) return;
+
+        if (indicatorId === 'moving-average') {
+            // SMA 25
+            datasets.push({
+                label: 'SMA 25',
+                data: data.map(d => d.sma_25),
+                borderColor: '#F59E0B',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y',
+                order: 1
+            });
+            // SMA 75
+            datasets.push({
+                label: 'SMA 75',
+                data: data.map(d => d.sma_75),
+                borderColor: '#A855F7',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y',
+                order: 1
+            });
+        } else if (indicatorId === 'bollinger') {
+            // ボリンジャーバンド（上限）
+            datasets.push({
+                label: 'BB Upper',
+                data: data.map(d => d.bb_upper),
+                borderColor: 'rgba(99, 102, 241, 0.5)',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: '+2',
+                yAxisID: 'y',
+                order: 2
+            });
+            // ボリンジャーバンド（中央）
+            datasets.push({
+                label: 'BB Middle',
+                data: data.map(d => d.bb_middle),
+                borderColor: 'rgba(99, 102, 241, 0.7)',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.1,
+                borderDash: [5, 5],
+                fill: false,
+                yAxisID: 'y',
+                order: 2
+            });
+            // ボリンジャーバンド（下限）
+            datasets.push({
+                label: 'BB Lower',
+                data: data.map(d => d.bb_lower),
+                borderColor: 'rgba(99, 102, 241, 0.5)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: false,
+                yAxisID: 'y',
+                order: 2
+            });
+        } else if (indicatorId === 'macd') {
+            // MACD
+            datasets.push({
+                label: 'MACD',
+                data: data.map(d => d.macd),
+                borderColor: '#10B981',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y1',
+                order: 3
+            });
+            // MACD Signal
+            datasets.push({
+                label: 'MACD Signal',
+                data: data.map(d => d.macd_signal),
+                borderColor: '#EF4444',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y1',
+                order: 3
+            });
+            // MACD Histogram
+            datasets.push({
+                label: 'MACD Hist',
+                data: data.map(d => d.macd_hist),
+                type: 'bar',
+                backgroundColor: data.map(d => d.macd_hist !== null && d.macd_hist >= 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'),
+                borderColor: 'transparent',
+                yAxisID: 'y1',
+                order: 4
+            });
+        } else if (indicatorId === 'rsi') {
+            // RSI
+            datasets.push({
+                label: 'RSI',
+                data: data.map(d => d.rsi_14),
+                borderColor: '#3B82F6',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y2',
+                order: 3
+            });
+        }
+    });
+
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: '終値',
-                data: prices,
-                borderColor: '#6366F1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                fill: true,
-                tension: 0.1,
-                pointRadius: 2,
-                pointHoverRadius: 5
-            }]
+            datasets: datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94A3B8',
+                        font: {
+                            size: 10
+                        }
+                    }
                 }
             },
             scales: {
@@ -69,9 +219,35 @@ function updateChart(data) {
                     }
                 },
                 y: {
+                    type: 'linear',
                     display: true,
+                    position: 'left',
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94A3B8'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: equippedIndicatorIds.includes('macd'),
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#94A3B8'
+                    }
+                },
+                y2: {
+                    type: 'linear',
+                    display: equippedIndicatorIds.includes('rsi'),
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        drawOnChartArea: false
                     },
                     ticks: {
                         color: '#94A3B8'
@@ -91,8 +267,18 @@ document.addEventListener('DOMContentLoaded', function() {
 // HTMX更新後にチャートを再描画
 document.body.addEventListener('htmx:afterSwap', function(event) {
     const chartDataEl = document.getElementById('chart-data');
+    const equippedIndicatorsEl = document.getElementById('equipped-indicators');
+
     if (chartDataEl) {
         const chartData = JSON.parse(chartDataEl.textContent);
+
+        // 装備中のインジケーターを更新
+        if (equippedIndicatorsEl) {
+            equippedIndicatorIds.length = 0;
+            const newIds = JSON.parse(equippedIndicatorsEl.textContent);
+            equippedIndicatorIds.push(...newIds);
+        }
+
         updateChart(chartData);
     }
 });

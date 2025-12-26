@@ -1,4 +1,5 @@
 <script id="chart-data" type="application/json">{{ chart_data | safe }}</script>
+<script id="equipped-indicators" type="application/json">{{ equipped_indicators | map(attribute='id') | list | tojson }}</script>
 
 <!-- 進行状況 -->
 {% set progress_width = ((game_state.current_day + 1) / game_state.total_days) * 100 %}

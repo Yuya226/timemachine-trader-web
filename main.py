@@ -2,80 +2,50 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
 import json
 import os
+import uuid
 from typing import Optional
 from models import (
     UserProfile, GameState, TradeAction,
     PLAYER_CLASSES, DIAGNOSTIC_QUESTIONS, INITIAL_INDICATORS, DUNGEONS,
-    generate_mock_stock_data, calculate_level, get_xp_for_level,
+    fetch_stock_data, calculate_level, get_xp_for_level,
     DIFFICULTY_LABELS, DIFFICULTY_COLORS
 )
+import database
 
 app = FastAPI(title="タイムマシン・トレーダー")
 
-# セッションミドルウェア
-# セッションミドルウェアの代わりにカスタムセッション管理を使用
-# ブラウザのクロスオリジン制限を回避するため
-import base64
-import hashlib
-import hmac
-import time
-
-SESSION_SECRET = "timemachine-trader-secret-key-2024"
+# セッション管理ミドルウェア
 SESSION_MAX_AGE = 1209600  # 2週間
 
-def encode_session(data: dict) -> str:
-    """セッションデータをエンコード"""
-    json_data = json.dumps(data)
-    b64_data = base64.b64encode(json_data.encode()).decode()
-    timestamp = str(int(time.time()))
-    signature = hmac.new(SESSION_SECRET.encode(), f"{b64_data}.{timestamp}".encode(), hashlib.sha256).hexdigest()[:16]
-    return f"{b64_data}.{timestamp}.{signature}"
-
-def decode_session(cookie: str) -> dict:
-    """セッションデータをデコード"""
-    try:
-        parts = cookie.split(".")
-        if len(parts) != 3:
-            return {}
-        b64_data, timestamp, signature = parts
-        expected_sig = hmac.new(SESSION_SECRET.encode(), f"{b64_data}.{timestamp}".encode(), hashlib.sha256).hexdigest()[:16]
-        if signature != expected_sig:
-            return {}
-        if int(timestamp) + SESSION_MAX_AGE < time.time():
-            return {}
-        json_data = base64.b64decode(b64_data).decode()
-        return json.loads(json_data)
-    except:
-        return {}
-
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request as StarletteRequest
-
-class CustomSessionMiddleware(BaseHTTPMiddleware):
+class SessionMiddleware(BaseHTTPMiddleware):
+    """セッションIDのみをクッキーで管理するミドルウェア"""
     async def dispatch(self, request: StarletteRequest, call_next):
-        # セッションを読み込み
-        session_cookie = request.cookies.get("session", "")
-        request.state.session = decode_session(session_cookie)
+        # セッションIDを取得または生成
+        session_id = request.cookies.get("session_id")
+        if not session_id:
+            session_id = str(uuid.uuid4())
+
+        request.state.session_id = session_id
 
         response = await call_next(request)
 
-        # セッションを保存
-        if hasattr(request.state, "session"):
-            session_value = encode_session(request.state.session)
-            response.set_cookie(
-                key="session",
-                value=session_value,
-                max_age=SESSION_MAX_AGE,
-                path="/",
-                httponly=False,
-                samesite="lax",
-                secure=False
-            )
+        # セッションIDをクッキーに設定
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            max_age=SESSION_MAX_AGE,
+            path="/",
+            httponly=False,
+            samesite="lax",
+            secure=False
+        )
         return response
 
-app.add_middleware(CustomSessionMiddleware)
+app.add_middleware(SessionMiddleware)
 
 # 静的ファイルとテンプレート
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -87,42 +57,44 @@ templates.env.globals["DIFFICULTY_LABELS"] = DIFFICULTY_LABELS
 templates.env.globals["DIFFICULTY_COLORS"] = DIFFICULTY_COLORS
 
 
-def get_session(request: Request) -> dict:
-    """セッションを取得"""
-    return getattr(request.state, "session", {})
-
 def get_user_profile(request: Request) -> Optional[UserProfile]:
-    """セッションからユーザープロフィールを取得"""
-    session = get_session(request)
-    profile_data = session.get("user_profile")
-    if profile_data:
-        return UserProfile(**profile_data)
-    return None
+    """データベースからユーザープロフィールを取得"""
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return None
+    return database.get_user_by_session(session_id)
 
 
 def save_user_profile(request: Request, profile: UserProfile):
-    """ユーザープロフィールをセッションに保存"""
-    request.state.session["user_profile"] = profile.model_dump()
+    """ユーザープロフィールをデータベースに保存"""
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return
+    database.save_user(session_id, profile)
 
 
 def get_game_state(request: Request) -> Optional[GameState]:
-    """セッションからゲーム状態を取得"""
-    session = get_session(request)
-    state_data = session.get("game_state")
-    if state_data:
-        return GameState(**state_data)
-    return None
+    """データベースからゲーム状態を取得"""
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return None
+    return database.get_game_state(session_id)
 
 
 def save_game_state(request: Request, state: GameState):
-    """ゲーム状態をセッションに保存"""
-    request.state.session["game_state"] = state.model_dump()
+    """ゲーム状態をデータベースに保存"""
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return
+    database.save_game_state(session_id, state)
 
 
 def clear_game_state(request: Request):
-    """ゲーム状態をクリア"""
-    if "game_state" in request.state.session:
-        del request.state.session["game_state"]
+    """ゲーム状態をデータベースから削除"""
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return
+    database.delete_game_state(session_id)
 
 
 # ルート
@@ -138,14 +110,18 @@ async def index(request: Request):
 @app.get("/onboarding", response_class=HTMLResponse)
 async def onboarding(request: Request):
     """オンボーディング（転生）画面"""
-    # 診断スコアを初期化
-    request.state.session["diagnostic_scores"] = {"hero": 0, "rogue": 0, "sage": 0}
-    request.state.session["current_question"] = 0
+    session_id = getattr(request.state, "session_id", None)
+    if session_id:
+        scores, current = database.get_diagnostic_scores(session_id)
+    else:
+        scores = {"hero": 0, "rogue": 0, "sage": 0}
+        current = 0
+
     return templates.TemplateResponse("onboarding.html", {
         "request": request,
         "questions": DIAGNOSTIC_QUESTIONS,
-        "question": DIAGNOSTIC_QUESTIONS[0],
-        "current": 0,
+        "question": DIAGNOSTIC_QUESTIONS[current],
+        "current": current,
         "total": len(DIAGNOSTIC_QUESTIONS)
     })
 
@@ -153,9 +129,12 @@ async def onboarding(request: Request):
 @app.post("/onboarding/answer", response_class=HTMLResponse)
 async def answer_question(request: Request, question_id: int = Form(...), option_index: int = Form(...)):
     """診断の回答を処理"""
-    session = get_session(request)
-    scores = session.get("diagnostic_scores", {"hero": 0, "rogue": 0, "sage": 0})
-    current = session.get("current_question", 0)
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return RedirectResponse(url="/", status_code=302)
+
+    # 診断スコアを取得
+    scores, current = database.get_diagnostic_scores(session_id)
 
     # スコアを加算
     question = DIAGNOSTIC_QUESTIONS[question_id]
@@ -164,9 +143,10 @@ async def answer_question(request: Request, question_id: int = Form(...), option
     scores["rogue"] += option["scores"]["rogue"]
     scores["sage"] += option["scores"]["sage"]
 
-    request.state.session["diagnostic_scores"] = scores
     current += 1
-    request.state.session["current_question"] = current
+
+    # 診断スコアをDBに保存
+    database.save_diagnostic_scores(session_id, scores, current)
 
     if current >= len(DIAGNOSTIC_QUESTIONS):
         # 診断完了 - クラス決定
@@ -184,8 +164,11 @@ async def answer_question(request: Request, question_id: int = Form(...), option
 @app.get("/onboarding/result", response_class=HTMLResponse)
 async def onboarding_result(request: Request):
     """クラス決定結果画面"""
-    session = get_session(request)
-    scores = session.get("diagnostic_scores", {"hero": 0, "rogue": 0, "sage": 0})
+    session_id = getattr(request.state, "session_id", None)
+    if not session_id:
+        return RedirectResponse(url="/", status_code=302)
+
+    scores, _ = database.get_diagnostic_scores(session_id)
 
     # 最高スコアのクラスを決定
     player_class = max(scores, key=scores.get)
@@ -205,6 +188,9 @@ async def onboarding_result(request: Request):
         win_rate=0.0
     )
     save_user_profile(request, profile)
+
+    # 診断スコアをクリア
+    database.clear_diagnostic_scores(session_id)
 
     return templates.TemplateResponse("result.html", {
         "request": request,
@@ -268,8 +254,8 @@ async def enter_dungeon_panel(request: Request, dungeon_id: str):
     if not dungeon:
         return HTMLResponse(content="<p>ダンジョンが見つかりません</p>")
 
-    # 株価データを生成
-    stock_data = generate_mock_stock_data(dungeon)
+    # 株価データを取得
+    stock_data = fetch_stock_data(dungeon)
 
     # ゲーム状態を初期化
     game_state = GameState(
@@ -318,8 +304,8 @@ async def enter_dungeon(request: Request, dungeon_id: str):
     if not dungeon:
         raise HTTPException(status_code=404, detail="Dungeon not found")
 
-    # 株価データを生成
-    stock_data = generate_mock_stock_data(dungeon)
+    # 株価データを取得
+    stock_data = fetch_stock_data(dungeon)
 
     # ゲーム状態を初期化
     game_state = GameState(
@@ -590,9 +576,18 @@ async def profile_page(request: Request):
 @app.post("/reset", response_class=HTMLResponse)
 async def reset_game(request: Request):
     """ゲームをリセット"""
-    request.state.session.clear()
+    session_id = getattr(request.state, "session_id", None)
+    if session_id:
+        # ゲーム状態を削除
+        database.delete_game_state(session_id)
+        # ユーザープロフィールを削除
+        # 注: usersテーブルから削除する場合は追加の関数が必要ですが、
+        # ここではゲーム状態のみ削除します
     return RedirectResponse(url="/", status_code=302)
 
+
+# データベースを初期化
+database.init_db()
 
 if __name__ == "__main__":
     import uvicorn

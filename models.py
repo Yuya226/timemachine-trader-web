@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 import random
+import yfinance as yf
+import pandas as pd
 
 # プレイヤークラス情報
 PLAYER_CLASSES = {
@@ -155,62 +157,62 @@ DUNGEONS = [
     {
         "id": "tutorial-1",
         "name": "初心者の洞窟",
-        "stock_symbol": "DEMO",
-        "start_date": "2023-01-01",
-        "end_date": "2023-01-31",
+        "stock_symbol": "7203.T",  # トヨタ自動車
+        "start_date": "2023-04-01",
+        "end_date": "2023-07-31",
         "difficulty": "easy",
         "recommended_level": 1,
-        "xp_reward": 100,
-        "gold_reward": 500,
-        "description": "穏やかな上昇トレンド。トレードの基本を学ぼう。",
+        "xp_reward": 200,
+        "gold_reward": 1000,
+        "description": "2023年のトヨタ自動車。綺麗な上昇トレンドを描いたボーナス相場。まずはここで「順張り」の快感を覚えよう。",
     },
     {
         "id": "forest-1",
         "name": "迷いの森",
-        "stock_symbol": "TECH",
-        "start_date": "2023-03-01",
-        "end_date": "2023-03-31",
-        "difficulty": "easy",
-        "recommended_level": 2,
-        "xp_reward": 150,
-        "gold_reward": 750,
-        "description": "小さな上下を繰り返すレンジ相場。タイミングを見極めよう。",
+        "stock_symbol": "9984.T",  # ソフトバンクグループ
+        "start_date": "2021-04-01",
+        "end_date": "2021-09-30",
+        "difficulty": "normal",  # easyから格上げ
+        "recommended_level": 3,
+        "xp_reward": 400,
+        "gold_reward": 2000,
+        "description": "2021年のソフトバンクG。方向感のないレンジ相場から、徐々に崩れていく難所。無駄なトレードを減らす「待つ力」が試される。",
     },
     {
         "id": "mountain-1",
         "name": "試練の山",
-        "stock_symbol": "GROW",
-        "start_date": "2023-06-01",
-        "end_date": "2023-06-30",
+        "stock_symbol": "^N225",   # 日経平均株価
+        "start_date": "2018-01-01",
+        "end_date": "2018-12-31",
         "difficulty": "normal",
         "recommended_level": 5,
-        "xp_reward": 300,
-        "gold_reward": 1500,
-        "description": "急上昇と急落が混在。冷静な判断力が試される。",
+        "xp_reward": 800,
+        "gold_reward": 5000,
+        "description": "2018年の日経平均。米中貿易摩擦で揺れ動いた乱高下相場。1年間の長期戦で、資金管理能力が問われる。",
     },
     {
         "id": "castle-1",
         "name": "魔王の城",
-        "stock_symbol": "BOSS",
-        "start_date": "2020-03-01",
-        "end_date": "2020-03-31",
+        "stock_symbol": "^N225",   # 日経平均株価
+        "start_date": "2020-01-01",
+        "end_date": "2020-06-30",
         "difficulty": "hard",
         "recommended_level": 10,
-        "xp_reward": 500,
-        "gold_reward": 3000,
-        "description": "コロナショック。歴史的な暴落を乗り越えられるか？",
+        "xp_reward": 2000,
+        "gold_reward": 10000,
+        "description": "【コロナ・ショック】数年に一度の歴史的暴落。プロでも退場する地獄の相場だが、底で拾えれば莫大な利益になる。",
     },
     {
         "id": "abyss-1",
         "name": "深淵の迷宮",
-        "stock_symbol": "LEGEND",
-        "start_date": "2022-01-01",
-        "end_date": "2022-03-31",
+        "stock_symbol": "^N225",   # 日経平均株価
+        "start_date": "2008-01-01",
+        "end_date": "2008-12-31",
         "difficulty": "legendary",
         "recommended_level": 15,
-        "xp_reward": 1000,
-        "gold_reward": 10000,
-        "description": "3ヶ月の長期戦。真の投資家だけが生き残る。",
+        "xp_reward": 5000,
+        "gold_reward": 50000,
+        "description": "【リーマン・ショック】100年に一度の金融危機。終わりの見えない下落トレンド。空売りを駆使しなければ生き残れない。",
     },
 ]
 
@@ -260,67 +262,78 @@ class TradeAction(BaseModel):
     shares: int = 0
 
 
-def generate_mock_stock_data(dungeon: Dict) -> List[Dict]:
-    """モック株価データを生成"""
-    data = []
-    
-    start_date = datetime.strptime(dungeon["start_date"], "%Y-%m-%d")
-    end_date = datetime.strptime(dungeon["end_date"], "%Y-%m-%d")
-    
-    base_price = 1000
-    volatility = 0.02
-    trend = 0
-    
-    # 難易度に応じてパラメータ調整
-    difficulty = dungeon["difficulty"]
-    if difficulty == "easy":
-        volatility = 0.015
-        trend = 0.003
-    elif difficulty == "normal":
-        volatility = 0.025
-        trend = 0.001
-    elif difficulty == "hard":
-        volatility = 0.05
-        trend = -0.005
-    elif difficulty == "legendary":
-        volatility = 0.04
-        trend = 0
-    
-    current_date = start_date
-    prev_close = base_price
-    
-    # シード固定で再現性を確保
-    random.seed(hash(dungeon["id"]))
-    
-    while current_date <= end_date:
-        # 週末をスキップ
-        if current_date.weekday() < 5:
-            random_change = (random.random() - 0.5) * 2 * volatility
-            trend_change = trend
-            total_change = random_change + trend_change
-            
-            open_price = prev_close * (1 + (random.random() - 0.5) * 0.005)
-            close_price = open_price * (1 + total_change)
-            high_price = max(open_price, close_price) * (1 + random.random() * 0.01)
-            low_price = min(open_price, close_price) * (1 - random.random() * 0.01)
-            volume = int(1000000 + random.random() * 500000)
-            
+def fetch_stock_data(dungeon: Dict) -> List[Dict]:
+    """yfinanceを使用して実在の株価データを取得し、テクニカル指標を計算"""
+    try:
+        symbol = dungeon["stock_symbol"]
+        start_date = dungeon["start_date"]
+        end_date = dungeon["end_date"]
+
+        # yfinanceでデータを取得
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(start=start_date, end=end_date)
+
+        # データが空の場合は空リストを返す
+        if df.empty:
+            return []
+
+        # テクニカル指標を計算
+        # SMA (移動平均線)
+        df['sma_25'] = df['Close'].rolling(window=25).mean()
+        df['sma_75'] = df['Close'].rolling(window=75).mean()
+
+        # RSI (相対力指数) - 14日
+        delta = df['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        df['rsi_14'] = 100 - (100 / (1 + rs))
+
+        # MACD (12, 26, 9)
+        ema_12 = df['Close'].ewm(span=12, adjust=False).mean()
+        ema_26 = df['Close'].ewm(span=26, adjust=False).mean()
+        df['macd'] = ema_12 - ema_26
+        df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+        df['macd_hist'] = df['macd'] - df['macd_signal']
+
+        # ボリンジャーバンド (20日, 2σ)
+        df['bb_middle'] = df['Close'].rolling(window=20).mean()
+        bb_std = df['Close'].rolling(window=20).std()
+        df['bb_upper'] = df['bb_middle'] + (bb_std * 2)
+        df['bb_lower'] = df['bb_middle'] - (bb_std * 2)
+
+        # DataFrameを辞書リストに変換
+        data = []
+        for date, row in df.iterrows():
+            # NaNをNoneに変換してJSONシリアライズ可能にする
+            def convert_nan(value):
+                if pd.isna(value):
+                    return None
+                return round(float(value), 2) if isinstance(value, (int, float)) else value
+
             data.append({
-                "date": current_date.strftime("%Y-%m-%d"),
-                "open": round(open_price, 2),
-                "high": round(high_price, 2),
-                "low": round(low_price, 2),
-                "close": round(close_price, 2),
-                "volume": volume,
+                "date": date.strftime("%Y-%m-%d"),
+                "open": round(float(row["Open"]), 2),
+                "high": round(float(row["High"]), 2),
+                "low": round(float(row["Low"]), 2),
+                "close": round(float(row["Close"]), 2),
+                "volume": int(row["Volume"]),
+                "sma_25": convert_nan(row.get("sma_25")),
+                "sma_75": convert_nan(row.get("sma_75")),
+                "rsi_14": convert_nan(row.get("rsi_14")),
+                "macd": convert_nan(row.get("macd")),
+                "macd_signal": convert_nan(row.get("macd_signal")),
+                "macd_hist": convert_nan(row.get("macd_hist")),
+                "bb_upper": convert_nan(row.get("bb_upper")),
+                "bb_middle": convert_nan(row.get("bb_middle")),
+                "bb_lower": convert_nan(row.get("bb_lower")),
             })
-            
-            prev_close = close_price
-        
-        # 日付を1日進める
-        from datetime import timedelta
-        current_date = current_date + timedelta(days=1)
-    
-    return data
+
+        return data
+    except Exception as e:
+        # エラーが発生した場合は空リストを返す
+        print(f"Error fetching stock data for {dungeon.get('stock_symbol', 'unknown')}: {e}")
+        return []
 
 
 def get_xp_for_level(level: int) -> int:
@@ -332,11 +345,11 @@ def calculate_level(total_xp: int) -> Dict[str, int]:
     """総XPからレベルを計算"""
     level = 1
     remaining_xp = total_xp
-    
+
     while remaining_xp >= get_xp_for_level(level):
         remaining_xp -= get_xp_for_level(level)
         level += 1
-    
+
     return {
         "level": level,
         "current_xp": remaining_xp,
