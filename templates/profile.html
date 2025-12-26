@@ -5,18 +5,18 @@
 {% block content %}
 <div style="padding: 24px 0;">
     <a href="/home" class="nav-back">← ギルドに戻る</a>
-    
+
     <header class="header">
         <h1>👤 プロフィール</h1>
     </header>
-    
+
     <!-- クラス情報 -->
     <div class="card class-card" style="padding: 24px;">
         <div class="class-icon" style="font-size: 3rem;">{{ class_info.icon }}</div>
         <h2 class="class-name {{ class_info.id }}" style="font-size: 1.5rem;">{{ class_info.japanese_name }}</h2>
         <span class="class-style">{{ class_info.trading_style }}</span>
     </div>
-    
+
     <!-- レベル・経験値 -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -29,22 +29,23 @@
                 <div style="font-size: 0.75rem; color: var(--muted);">ゴールド</div>
             </div>
         </div>
-        
+
         <div style="margin-bottom: 8px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted);">
                 <span>経験値</span>
                 <span>{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
             </div>
+            {% set xp_progress_width = (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 %}
             <div class="xp-bar-bg" style="margin-top: 4px;">
-                <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 }}%"></div>
+                <div class="xp-bar-fill" data-width="{{ xp_progress_width }}"></div>
             </div>
         </div>
     </div>
-    
+
     <!-- 統計 -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 16px;">📊 冒険の統計</h3>
-        
+
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
             <div style="text-align: center; padding: 16px; background: var(--surface-light); border-radius: 12px;">
                 <div style="font-size: 1.75rem; font-weight: 700; color: var(--success);">{{ profile.completed_dungeons|length }}</div>
@@ -66,7 +67,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- 解放済み装備 -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 16px;">⚔️ 解放済み装備</h3>
@@ -80,7 +81,7 @@
             {% endfor %}
         </div>
     </div>
-    
+
     <!-- クリア済みダンジョン -->
     {% if profile.completed_dungeons %}
     <div class="card">

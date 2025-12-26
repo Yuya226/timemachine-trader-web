@@ -70,8 +70,8 @@ class CustomSessionMiddleware(BaseHTTPMiddleware):
                 max_age=SESSION_MAX_AGE,
                 path="/",
                 httponly=False,
-                samesite="none",
-                secure=True
+                samesite="lax",
+                secure=False
             )
         return response
 

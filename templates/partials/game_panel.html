@@ -1,8 +1,9 @@
 <script id="chart-data" type="application/json">{{ chart_data | safe }}</script>
 
 <!-- 進行状況 -->
+{% set progress_width = ((game_state.current_day + 1) / game_state.total_days) * 100 %}
 <div class="progress-bar" style="margin-bottom: 12px;">
-    <div class="progress-fill" style="width: {{ ((game_state.current_day + 1) / game_state.total_days) * 100 }}%"></div>
+    <div class="progress-fill" data-width="{{ progress_width }}"></div>
 </div>
 <p class="text-muted text-center" style="font-size: 0.75rem; margin-bottom: 16px;">
     Day {{ game_state.current_day + 1 }} / {{ game_state.total_days }}
@@ -23,7 +24,7 @@
             {% if price_change >= 0 %}+{% endif %}{{ "{:.2f}".format(price_change) }} ({% if price_change >= 0 %}+{% endif %}{{ "{:.2f}".format(price_change_pct) }}%)
         </div>
     </div>
-    
+
     <!-- ポジション情報 -->
     <div class="position-info">
         <div class="position-item">
@@ -47,7 +48,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- トレードボタン -->
     <div class="trade-buttons">
         <form hx-post="/dungeon/trade" hx-target="#game-panel" hx-swap="innerHTML">
@@ -69,7 +70,7 @@
             </button>
         </form>
     </div>
-    
+
     <!-- 次の日へ -->
     <form hx-post="/dungeon/next-day" hx-target="#game-panel" hx-swap="innerHTML">
         <button type="submit" class="btn btn-primary btn-block next-day-btn">

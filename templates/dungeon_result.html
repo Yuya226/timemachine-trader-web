@@ -13,20 +13,20 @@
             <div>Lv.{{ old_level }} → Lv.{{ profile.level }}</div>
         </div>
         {% endif %}
-        
+
         <!-- 結果カード -->
         <div class="card result-card">
             <h2 class="result-title">
                 {% if profit_loss >= 0 %}🏆 攻略成功！{% else %}💀 攻略失敗...{% endif %}
             </h2>
-            
+
             <div class="result-value {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
                 {% if profit_loss >= 0 %}+{% endif %}¥{{ "{:,.0f}".format(profit_loss) }}
             </div>
             <div class="result-label">
                 ({% if profit_loss_percent >= 0 %}+{% endif %}{{ "{:.1f}".format(profit_loss_percent) }}%)
             </div>
-            
+
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; text-align: center;">
                 <div>
                     <div style="font-size: 0.75rem; color: var(--muted);">最終資産</div>
@@ -38,7 +38,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 報酬 -->
         <div class="card">
             <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 16px; text-align: center;">🎁 獲得報酬</h3>
@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 新しいインジケーター解放 -->
         {% if new_indicators %}
         <div class="card" style="border-color: var(--gold);">
@@ -71,7 +71,7 @@
             {% endfor %}
         </div>
         {% endif %}
-        
+
         <!-- 現在のステータス -->
         <div class="card">
             <h3 style="font-size: 1rem; margin-bottom: 12px;">📊 現在のステータス</h3>
@@ -79,15 +79,16 @@
                 <span style="color: var(--muted);">レベル</span>
                 <span style="font-weight: 600;">Lv.{{ profile.level }}</span>
             </div>
+            {% set xp_progress_width = (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 %}
             <div class="xp-bar-bg">
-                <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 }}%"></div>
+                <div class="xp-bar-fill" data-width="{{ xp_progress_width }}"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 8px;">
                 <span style="font-size: 0.75rem; color: var(--muted);">{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
                 <span style="font-size: 0.75rem; color: var(--gold);">💰 {{ "{:,}".format(profile.gold) }}G</span>
             </div>
         </div>
-        
+
         <!-- ボタン -->
         <div style="display: flex; gap: 12px; margin-top: 24px;">
             <a href="/dungeons" class="btn btn-secondary" style="flex: 1;">

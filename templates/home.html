@@ -7,7 +7,7 @@
     <header class="header">
         <h1>冒険者ギルド</h1>
     </header>
-    
+
     <!-- ステータスバー -->
     <div class="status-bar">
         <div class="status-item">
@@ -25,18 +25,19 @@
             </div>
         </div>
     </div>
-    
+
     <!-- XPバー -->
     <div class="card" style="padding: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 0.875rem; color: var(--muted);">経験値</span>
             <span style="font-size: 0.875rem; color: var(--gold);">{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
         </div>
+        {% set xp_progress_width = (profile.xp / profile.xp_to_next_level) * 100 %}
         <div class="xp-bar-bg">
-            <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 }}%"></div>
+            <div class="xp-bar-fill" data-width="{{ xp_progress_width }}"></div>
         </div>
     </div>
-    
+
     <!-- メニューグリッド -->
     <div class="menu-grid">
         <a href="/dungeons" class="menu-item">
@@ -58,7 +59,7 @@
             </button>
         </form>
     </div>
-    
+
     <!-- クリア状況 -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 12px;">📊 冒険の記録</h3>
