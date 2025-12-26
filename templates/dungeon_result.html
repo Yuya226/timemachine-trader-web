@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}攻略完了 - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 40px 0;">
+    <div class="fade-in">
+        <!-- レベルアップ演出 -->
+        {% if leveled_up %}
+        <div class="level-up">
+            <div style="font-size: 2rem;">🎉</div>
+            <div style="font-size: 1.5rem; font-weight: 700;">LEVEL UP!</div>
+            <div>Lv.{{ old_level }} → Lv.{{ profile.level }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- 結果カード -->
+        <div class="card result-card">
+            <h2 class="result-title">
+                {% if profit_loss >= 0 %}🏆 攻略成功！{% else %}💀 攻略失敗...{% endif %}
+            </h2>
+            
+            <div class="result-value {% if profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+                {% if profit_loss >= 0 %}+{% endif %}¥{{ "{:,.0f}".format(profit_loss) }}
+            </div>
+            <div class="result-label">
+                ({% if profit_loss_percent >= 0 %}+{% endif %}{{ "{:.1f}".format(profit_loss_percent) }}%)
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; text-align: center;">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">最終資産</div>
+                    <div style="font-size: 1.25rem; font-weight: 600;">¥{{ "{:,.0f}".format(final_value) }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">取引回数</div>
+                    <div style="font-size: 1.25rem; font-weight: 600;">{{ trade_count }}回</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 報酬 -->
+        <div class="card">
+            <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 16px; text-align: center;">🎁 獲得報酬</h3>
+            <div class="reward-list">
+                <div class="reward-item">
+                    <div class="reward-icon">⭐</div>
+                    <div class="reward-value text-gold">+{{ xp_earned }}</div>
+                    <div class="reward-label">経験値</div>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-icon">💰</div>
+                    <div class="reward-value" style="color: var(--warning);">+{{ "{:,}".format(gold_earned) }}</div>
+                    <div class="reward-label">ゴールド</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新しいインジケーター解放 -->
+        {% if new_indicators %}
+        <div class="card" style="border-color: var(--gold);">
+            <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 16px; text-align: center;">🔓 新装備解放！</h3>
+            {% for ind in new_indicators %}
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--surface-light); border-radius: 8px; margin-bottom: 8px;">
+                <span style="font-size: 1.5rem;">⚔️</span>
+                <div>
+                    <div style="font-weight: 600;">{{ ind.rpg_name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">{{ ind.name }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- 現在のステータス -->
+        <div class="card">
+            <h3 style="font-size: 1rem; margin-bottom: 12px;">📊 現在のステータス</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: var(--muted);">レベル</span>
+                <span style="font-weight: 600;">Lv.{{ profile.level }}</span>
+            </div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 }}%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <span style="font-size: 0.75rem; color: var(--muted);">{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
+                <span style="font-size: 0.75rem; color: var(--gold);">💰 {{ "{:,}".format(profile.gold) }}G</span>
+            </div>
+        </div>
+        
+        <!-- ボタン -->
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="/dungeons" class="btn btn-secondary" style="flex: 1;">
+                🏰 ダンジョン選択
+            </a>
+            <a href="/home" class="btn btn-primary" style="flex: 1;">
+                🏠 ギルドへ戻る
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

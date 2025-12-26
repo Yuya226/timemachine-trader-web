@@ -1,0 +1,94 @@
+<script id="chart-data" type="application/json">{{ chart_data | safe }}</script>
+
+<!-- 進行状況 -->
+<div class="progress-bar" style="margin-bottom: 12px;">
+    <div class="progress-fill" style="width: {{ ((game_state.current_day + 1) / game_state.total_days) * 100 }}%"></div>
+</div>
+<p class="text-muted text-center" style="font-size: 0.75rem; margin-bottom: 16px;">
+    Day {{ game_state.current_day + 1 }} / {{ game_state.total_days }}
+</p>
+
+<!-- チャート -->
+<div class="chart-container">
+    <canvas id="priceChart"></canvas>
+</div>
+
+<!-- 価格表示 -->
+<div class="trade-panel">
+    <div class="price-display">
+        <div class="current-price">¥{{ "{:,.2f}".format(current_price.close) }}</div>
+        {% set price_change = current_price.close - current_price.open %}
+        {% set price_change_pct = (price_change / current_price.open) * 100 %}
+        <div class="price-change {% if price_change >= 0 %}positive{% else %}negative{% endif %}">
+            {% if price_change >= 0 %}+{% endif %}{{ "{:.2f}".format(price_change) }} ({% if price_change >= 0 %}+{% endif %}{{ "{:.2f}".format(price_change_pct) }}%)
+        </div>
+    </div>
+    
+    <!-- ポジション情報 -->
+    <div class="position-info">
+        <div class="position-item">
+            <div class="position-label">現金</div>
+            <div class="position-value">¥{{ "{:,.0f}".format(game_state.cash) }}</div>
+        </div>
+        <div class="position-item">
+            <div class="position-label">保有株数</div>
+            <div class="position-value">{{ game_state.shares }}株</div>
+        </div>
+        <div class="position-item">
+            <div class="position-label">平均取得価格</div>
+            <div class="position-value">{% if game_state.avg_price > 0 %}¥{{ "{:,.2f}".format(game_state.avg_price) }}{% else %}-{% endif %}</div>
+        </div>
+        <div class="position-item">
+            <div class="position-label">評価額</div>
+            {% set total_value = game_state.cash + game_state.shares * current_price.close %}
+            {% set pnl = total_value - 10000 %}
+            <div class="position-value {% if pnl >= 0 %}text-success{% else %}text-error{% endif %}">
+                ¥{{ "{:,.0f}".format(total_value) }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- トレードボタン -->
+    <div class="trade-buttons">
+        <form hx-post="/dungeon/trade" hx-target="#game-panel" hx-swap="innerHTML">
+            <input type="hidden" name="action" value="buy">
+            <button type="submit" class="btn btn-success btn-block" {% if game_state.cash < current_price.close %}disabled{% endif %}>
+                📈 買う
+            </button>
+        </form>
+        <form hx-post="/dungeon/trade" hx-target="#game-panel" hx-swap="innerHTML">
+            <input type="hidden" name="action" value="sell">
+            <button type="submit" class="btn btn-danger btn-block" {% if game_state.shares == 0 %}disabled{% endif %}>
+                📉 売る
+            </button>
+        </form>
+        <form hx-post="/dungeon/trade" hx-target="#game-panel" hx-swap="innerHTML">
+            <input type="hidden" name="action" value="wait">
+            <button type="submit" class="btn btn-secondary btn-block">
+                ⏸️ 待つ
+            </button>
+        </form>
+    </div>
+    
+    <!-- 次の日へ -->
+    <form hx-post="/dungeon/next-day" hx-target="#game-panel" hx-swap="innerHTML">
+        <button type="submit" class="btn btn-primary btn-block next-day-btn">
+            ⏩ 次の日へ
+            <span class="htmx-indicator"><span class="spinner"></span></span>
+        </button>
+    </form>
+</div>
+
+<!-- 装備中のインジケーター -->
+{% if equipped_indicators %}
+<div class="card" style="padding: 12px 16px;">
+    <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 8px;">装備中</div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        {% for ind in equipped_indicators %}
+        <span style="background: var(--surface-light); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem;">
+            {{ ind.rpg_name }}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

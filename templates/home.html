@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}冒険者ギルド - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 24px 0;">
+    <header class="header">
+        <h1>冒険者ギルド</h1>
+    </header>
+    
+    <!-- ステータスバー -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-icon">{{ class_info.icon }}</span>
+            <div>
+                <div class="status-value">Lv.{{ profile.level }}</div>
+                <div class="status-label">{{ class_info.japanese_name }}</div>
+            </div>
+        </div>
+        <div class="status-item">
+            <span class="status-icon">💰</span>
+            <div>
+                <div class="status-value">{{ "{:,}".format(profile.gold) }}</div>
+                <div class="status-label">ゴールド</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- XPバー -->
+    <div class="card" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.875rem; color: var(--muted);">経験値</span>
+            <span style="font-size: 0.875rem; color: var(--gold);">{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
+        </div>
+        <div class="xp-bar-bg">
+            <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 }}%"></div>
+        </div>
+    </div>
+    
+    <!-- メニューグリッド -->
+    <div class="menu-grid">
+        <a href="/dungeons" class="menu-item">
+            <span class="menu-icon">🏰</span>
+            <span class="menu-label">ダンジョン</span>
+        </a>
+        <a href="/equipment" class="menu-item">
+            <span class="menu-icon">⚔️</span>
+            <span class="menu-label">装備</span>
+        </a>
+        <a href="/profile" class="menu-item">
+            <span class="menu-icon">👤</span>
+            <span class="menu-label">プロフィール</span>
+        </a>
+        <form action="/reset" method="post" style="display: contents;">
+            <button type="submit" class="menu-item" style="border: none; cursor: pointer;" onclick="return confirm('本当にリセットしますか？')">
+                <span class="menu-icon">🔄</span>
+                <span class="menu-label">リセット</span>
+            </button>
+        </form>
+    </div>
+    
+    <!-- クリア状況 -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 12px;">📊 冒険の記録</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
+            <div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ profile.completed_dungeons|length }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">クリア数</div>
+            </div>
+            <div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">{{ profile.total_trades }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">総取引数</div>
+            </div>
+            <div>
+                <div style="font-size: 1.5rem; font-weight: 700; {% if profile.total_profit >= 0 %}color: var(--success);{% else %}color: var(--error);{% endif %}">
+                    {% if profile.total_profit >= 0 %}+{% endif %}{{ "{:,.0f}".format(profile.total_profit) }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--muted);">累計損益</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

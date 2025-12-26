@@ -1,0 +1,19 @@
+<div style="padding: 16px 0;">
+    <a href="/dungeons" class="nav-back">← ダンジョン選択に戻る</a>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0;">
+        <div>
+            <h1 style="font-size: 1.25rem; font-weight: 700;">{{ dungeon.name }}</h1>
+            <p class="text-muted" style="font-size: 0.75rem;">
+                {{ dungeon.stock_symbol }} | {{ dungeon.start_date }} 〜 {{ dungeon.end_date }}
+            </p>
+        </div>
+        <span class="difficulty-badge"
+              style="--difficulty-color: {{ DIFFICULTY_COLORS[dungeon.difficulty] }}; --difficulty-bg-color: {{ difficulty_bg_color }};">
+            {{ DIFFICULTY_LABELS[dungeon.difficulty] }}
+        </span>
+    </div>
+    <div id="game-panel">
+        {% include "partials/game_panel.html" %}
+    </div>
+</div>

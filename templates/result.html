@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}転生完了 - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 40px 0;">
+    <div class="text-center fade-in">
+        <p class="text-muted mb-4">あなたの投資家タイプは...</p>
+        
+        <div class="card class-card">
+            <div class="class-icon">{{ class_info.icon }}</div>
+            <h1 class="class-name {{ class_info.id }}">{{ class_info.japanese_name }}</h1>
+            <span class="class-style">{{ class_info.trading_style }}</span>
+            <p class="class-description">{{ class_info.description }}</p>
+        </div>
+        
+        <div class="card" style="text-align: left;">
+            <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 12px;">🎯 初期スキル</h3>
+            <ul style="color: var(--muted); font-size: 0.9rem; line-height: 2;">
+                {% for skill in class_info.initial_skills %}
+                <li>✨ {{ skill }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="card" style="text-align: left;">
+            <h3 style="font-size: 1rem; color: var(--muted); margin-bottom: 12px;">📊 診断スコア</h3>
+            <div style="display: flex; justify-content: space-around;">
+                <div class="text-center">
+                    <div style="font-size: 1.5rem;">⚔️</div>
+                    <div style="font-size: 0.75rem; color: var(--hero);">勇者</div>
+                    <div style="font-weight: 600;">{{ scores.hero }}</div>
+                </div>
+                <div class="text-center">
+                    <div style="font-size: 1.5rem;">🗡️</div>
+                    <div style="font-size: 0.75rem; color: var(--rogue);">盗賊</div>
+                    <div style="font-weight: 600;">{{ scores.rogue }}</div>
+                </div>
+                <div class="text-center">
+                    <div style="font-size: 1.5rem;">📖</div>
+                    <div style="font-size: 0.75rem; color: var(--sage);">賢者</div>
+                    <div style="font-weight: 600;">{{ scores.sage }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="/home" class="btn btn-gold btn-lg btn-block mt-6">
+            冒険を始める
+        </a>
+    </div>
+</div>
+{% endblock %}

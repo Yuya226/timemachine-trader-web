@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dungeon.name }} - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 16px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+            <h1 style="font-size: 1.25rem; font-weight: 700;">{{ dungeon.name }}</h1>
+            <p class="text-muted" style="font-size: 0.75rem;">{{ dungeon.stock_symbol }} | {{ dungeon.start_date }} 〜 {{ dungeon.end_date }}</p>
+        </div>
+        <span class="difficulty-badge" style="--difficulty-color: {{ DIFFICULTY_COLORS[dungeon.difficulty] }}; --difficulty-bg-color: {{ difficulty_bg_color }};">
+            {{ DIFFICULTY_LABELS[dungeon.difficulty] }}
+        </span>
+    </div>
+
+    <div id="game-panel">
+        {% include "partials/game_panel.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let chartInstance = null;
+
+function updateChart(data) {
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    const labels = data.map(d => d.date);
+    const prices = data.map(d => d.close);
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '終値',
+                data: prices,
+                borderColor: '#6366F1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.1,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94A3B8',
+                        maxTicksLimit: 5
+                    }
+                },
+                y: {
+                    display: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94A3B8'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 初期チャート描画
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ chart_data | safe }};
+    updateChart(chartData);
+});
+
+// HTMX更新後にチャートを再描画
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    const chartDataEl = document.getElementById('chart-data');
+    if (chartDataEl) {
+        const chartData = JSON.parse(chartDataEl.textContent);
+        updateChart(chartData);
+    }
+});
+</script>
+{% endblock %}

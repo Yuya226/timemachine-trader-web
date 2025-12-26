@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}プロフィール - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 24px 0;">
+    <a href="/home" class="nav-back">← ギルドに戻る</a>
+    
+    <header class="header">
+        <h1>👤 プロフィール</h1>
+    </header>
+    
+    <!-- クラス情報 -->
+    <div class="card class-card" style="padding: 24px;">
+        <div class="class-icon" style="font-size: 3rem;">{{ class_info.icon }}</div>
+        <h2 class="class-name {{ class_info.id }}" style="font-size: 1.5rem;">{{ class_info.japanese_name }}</h2>
+        <span class="class-style">{{ class_info.trading_style }}</span>
+    </div>
+    
+    <!-- レベル・経験値 -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <div style="font-size: 2rem; font-weight: 700;">Lv.{{ profile.level }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">冒険者レベル</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--gold);">{{ "{:,}".format(profile.gold) }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">ゴールド</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted);">
+                <span>経験値</span>
+                <span>{{ profile.xp }} / {{ profile.xp_to_next_level }} XP</span>
+            </div>
+            <div class="xp-bar-bg" style="margin-top: 4px;">
+                <div class="xp-bar-fill" style="width: {{ (profile.xp / profile.xp_to_next_level) * 100 if profile.xp_to_next_level > 0 else 0 }}%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 統計 -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 16px;">📊 冒険の統計</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <div style="text-align: center; padding: 16px; background: var(--surface-light); border-radius: 12px;">
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--success);">{{ profile.completed_dungeons|length }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">クリアダンジョン</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: var(--surface-light); border-radius: 12px;">
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary);">{{ profile.total_trades }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">総取引回数</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: var(--surface-light); border-radius: 12px;">
+                <div style="font-size: 1.75rem; font-weight: 700; {% if profile.total_profit >= 0 %}color: var(--success);{% else %}color: var(--error);{% endif %}">
+                    {% if profile.total_profit >= 0 %}+{% endif %}{{ "{:,.0f}".format(profile.total_profit) }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--muted);">累計損益</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: var(--surface-light); border-radius: 12px;">
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--warning);">{{ "{:.0f}".format(profile.win_rate * 100) }}%</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">勝率</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 解放済み装備 -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 16px;">⚔️ 解放済み装備</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for ind in profile.indicators %}
+            {% if ind.unlocked %}
+            <span style="background: {% if ind.equipped %}var(--primary){% else %}var(--surface-light){% endif %}; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem;">
+                {{ ind.rpg_name }}
+            </span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- クリア済みダンジョン -->
+    {% if profile.completed_dungeons %}
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 16px;">🏆 クリア済みダンジョン</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for dungeon_id in profile.completed_dungeons %}
+            <span style="background: var(--success); color: var(--background); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem;">
+                ✅ {{ dungeon_id }}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

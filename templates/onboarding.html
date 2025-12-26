@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}転生診断 - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 24px 0;">
+    <header class="header">
+        <h1>転生診断</h1>
+    </header>
+    
+    <div id="question-container">
+        {% include "partials/question.html" %}
+    </div>
+</div>
+{% endblock %}

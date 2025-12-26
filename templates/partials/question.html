@@ -1,0 +1,27 @@
+<div class="fade-in">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ ((current + 1) / total) * 100 }}%"></div>
+    </div>
+    
+    <p class="text-muted mb-4" style="font-size: 0.875rem;">
+        質問 {{ current + 1 }} / {{ total }}
+    </p>
+    
+    <div class="card">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 24px; line-height: 1.6;">
+            {{ question.question }}
+        </h2>
+        
+        <div class="options">
+            {% for option in question.options %}
+            <form hx-post="/onboarding/answer" hx-target="#question-container" hx-swap="innerHTML">
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <input type="hidden" name="option_index" value="{{ loop.index0 }}">
+                <button type="submit" class="option-btn">
+                    {{ option.text }}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}装備管理 - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 24px 0;">
+    <a href="/home" class="nav-back">← ギルドに戻る</a>
+    
+    <header class="header">
+        <h1>⚔️ 装備管理</h1>
+    </header>
+    
+    <p class="text-muted mb-4">インジケーター（武器）を装備してダンジョンに挑もう</p>
+    
+    <div id="equipment-list">
+        {% include "partials/equipment_list.html" %}
+    </div>
+    
+    <div class="card mt-6" style="text-align: center;">
+        <p class="text-muted" style="font-size: 0.875rem;">
+            💡 レベルアップすると新しい装備が解放されます
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,677 @@
+/* タイムマシン・トレーダー - ダークファンタジーテーマ */
+
+:root {
+    --primary: #6366F1;
+    --primary-light: #818CF8;
+    --background: #0F172A;
+    --background-dark: #020617;
+    --surface: #1E293B;
+    --surface-light: #334155;
+    --foreground: #F8FAFC;
+    --muted: #94A3B8;
+    --border: #334155;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+    --gold: #FFD700;
+    --hero: #FFD700;
+    --rogue: #A855F7;
+    --sage: #3B82F6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(180deg, var(--background) 0%, var(--background-dark) 100%);
+    color: var(--foreground);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* コンテナ */
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+    min-height: 100vh;
+}
+
+/* ヘッダー */
+.header {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* カード */
+.card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--foreground);
+}
+
+.card-text {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+/* ボタン */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-secondary {
+    background: var(--surface-light);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--surface);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--success), #34D399);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--error), #F87171);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--warning), #FBBF24);
+    color: var(--background);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, var(--gold), #FFC107);
+    color: var(--background);
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-lg {
+    padding: 18px 36px;
+    font-size: 1.125rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* オプションボタン（診断用） */
+.option-btn {
+    display: block;
+    width: 100%;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    background: var(--surface-light);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--foreground);
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.option-btn:active {
+    transform: scale(0.98);
+}
+
+/* プログレスバー */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-light);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ステータスバー */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-icon {
+    font-size: 1.25rem;
+}
+
+.status-value {
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.status-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+/* クラスカード */
+.class-card {
+    text-align: center;
+    padding: 32px;
+}
+
+.class-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+.class-name {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.class-name.hero { color: var(--hero); }
+.class-name.rogue { color: var(--rogue); }
+.class-name.sage { color: var(--sage); }
+
+.class-style {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--surface-light);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+}
+
+.class-description {
+    color: var(--muted);
+    line-height: 1.8;
+}
+
+/* メニューグリッド */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--foreground);
+    transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.menu-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.menu-label {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* ダンジョンリスト */
+.dungeon-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dungeon-card {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--foreground);
+    transition: all 0.2s ease;
+}
+
+.dungeon-card:hover {
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.dungeon-card.completed {
+    border-color: var(--success);
+    opacity: 0.8;
+}
+
+.dungeon-card.locked {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.dungeon-icon {
+    font-size: 2rem;
+    margin-right: 16px;
+}
+
+.dungeon-info {
+    flex: 1;
+}
+
+.dungeon-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.dungeon-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.difficulty-badge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--difficulty-bg-color, var(--surface-light));
+    color: var(--difficulty-color, var(--foreground));
+}
+
+.dungeon-arrow {
+    color: var(--muted);
+    font-size: 1.5rem;
+}
+
+/* チャートエリア */
+.chart-container {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    height: 300px;
+}
+
+/* トレードパネル */
+.trade-panel {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.price-display {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.current-price {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.price-change {
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+.price-change.positive { color: var(--success); }
+.price-change.negative { color: var(--error); }
+
+.position-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--surface-light);
+    border-radius: 12px;
+}
+
+.position-item {
+    text-align: center;
+}
+
+.position-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.position-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.trade-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.next-day-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 装備リスト */
+.equipment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.equipment-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.equipment-item.equipped {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.equipment-item.locked {
+    opacity: 0.5;
+}
+
+.equipment-icon {
+    font-size: 1.5rem;
+    margin-right: 12px;
+}
+
+.equipment-info {
+    flex: 1;
+}
+
+.equipment-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.equipment-rpg-name {
+    font-size: 0.75rem;
+    color: var(--gold);
+}
+
+.equipment-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.equipment-toggle {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+/* 結果画面 */
+.result-card {
+    text-align: center;
+    padding: 32px;
+}
+
+.result-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.result-value {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.result-value.positive { color: var(--success); }
+.result-value.negative { color: var(--error); }
+
+.result-label {
+    color: var(--muted);
+    margin-bottom: 24px;
+}
+
+.reward-list {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.reward-item {
+    text-align: center;
+}
+
+.reward-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.reward-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.reward-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+/* レベルアップ演出 */
+.level-up {
+    background: linear-gradient(135deg, var(--gold), var(--warning));
+    color: var(--background);
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 16px;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* XPバー */
+.xp-bar {
+    margin-top: 8px;
+}
+
+.xp-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-light);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--warning));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.xp-text {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* ナビゲーション */
+.nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+}
+
+.nav-back:hover {
+    color: var(--foreground);
+}
+
+/* アニメーション */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ユーティリティ */
+.text-center { text-align: center; }
+.text-muted { color: var(--muted); }
+.text-success { color: var(--success); }
+.text-error { color: var(--error); }
+.text-gold { color: var(--gold); }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+
+/* レスポンシブ */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .class-icon {
+        font-size: 3rem;
+    }
+
+    .class-name {
+        font-size: 1.75rem;
+    }
+}
+
+/* ローディング */
+.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--surface-light);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

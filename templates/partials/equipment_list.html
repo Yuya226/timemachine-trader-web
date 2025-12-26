@@ -1,0 +1,29 @@
+<div class="equipment-list">
+    {% for ind in profile.indicators %}
+    <div class="equipment-item {% if ind.equipped %}equipped{% endif %} {% if not ind.unlocked %}locked{% endif %}">
+        <div class="equipment-icon">
+            {% if ind.type == 'weapon' %}⚔️{% else %}✨{% endif %}
+        </div>
+        <div class="equipment-info">
+            <div class="equipment-name">{{ ind.name }}</div>
+            <div class="equipment-rpg-name">{{ ind.rpg_name }}</div>
+            <div class="equipment-desc">{{ ind.description }}</div>
+            {% if not ind.unlocked %}
+            <div style="font-size: 0.7rem; color: var(--warning); margin-top: 4px;">
+                🔒 Lv.{{ ind.required_level }}で解放
+            </div>
+            {% endif %}
+        </div>
+        {% if ind.unlocked %}
+        <form hx-post="/equipment/toggle" hx-target="#equipment-list" hx-swap="innerHTML">
+            <input type="hidden" name="indicator_id" value="{{ ind.id }}">
+            <button type="submit" class="btn equipment-toggle {% if ind.equipped %}btn-primary{% else %}btn-secondary{% endif %}">
+                {% if ind.equipped %}装備中{% else %}装備{% endif %}
+            </button>
+        </form>
+        {% else %}
+        <span style="color: var(--muted); font-size: 0.875rem;">🔒</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}ダンジョン選択 - タイムマシン・トレーダー{% endblock %}
+
+{% block content %}
+<div style="padding: 24px 0;">
+    <a href="/home" class="nav-back" id="back-link">← ギルドに戻る</a>
+
+    <header class="header" id="page-header">
+        <h1>🏰 ダンジョン選択</h1>
+    </header>
+
+    <p class="text-muted mb-4" id="page-description">攻略するダンジョンを選択してください</p>
+
+    <div id="main-content">
+        <div class="dungeon-list" id="dungeon-list">
+            {% for dungeon in dungeons %}
+            {% if dungeon.can_enter %}
+            <div class="dungeon-card {% if dungeon.completed %}completed{% endif %}"
+                 data-dungeon-id="{{ dungeon.id }}"
+                 data-dungeon-name="{{ dungeon.name }}"
+                 data-dungeon-symbol="{{ dungeon.stock_symbol }}"
+                 data-dungeon-start="{{ dungeon.start_date }}"
+                 data-dungeon-end="{{ dungeon.end_date }}"
+                 data-dungeon-difficulty="{{ dungeon.difficulty }}"
+                 data-dungeon-xp="{{ dungeon.xp_reward }}"
+                 data-dungeon-gold="{{ dungeon.gold_reward }}"
+                 style="cursor: pointer;">
+            {% else %}
+            <div class="dungeon-card locked">
+            {% endif %}
+                <div class="dungeon-icon">
+                    {% if dungeon.difficulty == 'easy' %}🌲
+                    {% elif dungeon.difficulty == 'normal' %}⛰️
+                    {% elif dungeon.difficulty == 'hard' %}🏰
+                    {% else %}🌋{% endif %}
+                </div>
+                <div class="dungeon-info">
+                    <div class="dungeon-name">
+                        {{ dungeon.name }}
+                        {% if dungeon.completed %}✅{% endif %}
+                    </div>
+                    <div class="dungeon-meta">
+                        <span class="difficulty-badge" style="--difficulty-color: {{ DIFFICULTY_COLORS[dungeon.difficulty] }}; --difficulty-bg-color: {{ dungeon.difficulty_bg_color }};">
+                            {{ DIFFICULTY_LABELS[dungeon.difficulty] }}
+                        </span>
+                        <span>Lv.{{ dungeon.recommended_level }}+</span>
+                        <span>💰{{ dungeon.gold_reward }}</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">{{ dungeon.description }}</p>
+                </div>
+                <div class="dungeon-arrow">
+                    {% if dungeon.can_enter %}→{% else %}🔒{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ゲームデータをJSONで埋め込み -->
+<script id="profile-data" type="application/json">{{ profile | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// ゲーム状態
+let chartInstance = null;
+let gameState = null;
+let profileData = JSON.parse(document.getElementById('profile-data').textContent);
+
+const DIFFICULTY_LABELS = {
+    "easy": "初級",
+    "normal": "中級",
+    "hard": "上級",
+    "legendary": "伝説"
+};
+
+const DIFFICULTY_COLORS = {
+    "easy": "#10B981",
+    "normal": "#F59E0B",
+    "hard": "#EF4444",
+    "legendary": "#A855F7"
+};
+
+// 株価データを生成（クライアントサイド）
+function generateStockData(startDate, endDate, difficulty) {
+    const data = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    let price = 1000;
+    let volatility = difficulty === 'easy' ? 0.02 :
+                     difficulty === 'normal' ? 0.04 :
+                     difficulty === 'hard' ? 0.06 : 0.08;
+    let trend = difficulty === 'easy' ? 0.002 :
+                difficulty === 'normal' ? 0 :
+                difficulty === 'hard' ? -0.001 : -0.002;
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        // 週末をスキップ
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+
+        const change = (Math.random() - 0.5) * 2 * volatility + trend;
+        const open = price;
+        price = price * (1 + change);
+        const high = Math.max(open, price) * (1 + Math.random() * 0.01);
+        const low = Math.min(open, price) * (1 - Math.random() * 0.01);
+
+        data.push({
+            date: d.toISOString().split('T')[0],
+            open: Math.round(open * 100) / 100,
+            high: Math.round(high * 100) / 100,
+            low: Math.round(low * 100) / 100,
+            close: Math.round(price * 100) / 100,
+            volume: Math.floor(Math.random() * 1000000) + 500000
+        });
+    }
+
+    return data;
+}
+
+function updateChart(data) {
+    const canvas = document.getElementById('priceChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    const labels = data.map(d => d.date);
+    const prices = data.map(d => d.close);
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '終値',
+                data: prices,
+                borderColor: '#6366F1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.1,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94A3B8',
+                        maxTicksLimit: 5
+                    }
+                },
+                y: {
+                    display: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94A3B8'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function enterDungeonFromElement(element) {
+    const dungeonId = element.dataset.dungeonId;
+    const name = element.dataset.dungeonName;
+    const symbol = element.dataset.dungeonSymbol;
+    const startDate = element.dataset.dungeonStart;
+    const endDate = element.dataset.dungeonEnd;
+    const difficulty = element.dataset.dungeonDifficulty;
+    const xpReward = parseInt(element.dataset.dungeonXp);
+    const goldReward = parseInt(element.dataset.dungeonGold);
+    enterDungeon(dungeonId, name, symbol, startDate, endDate, difficulty, xpReward, goldReward);
+}
+
+function enterDungeon(dungeonId, name, symbol, startDate, endDate, difficulty, xpReward, goldReward) {
+    // ヘッダーを非表示
+    document.getElementById('page-header').style.display = 'none';
+    document.getElementById('page-description').style.display = 'none';
+    document.getElementById('back-link').textContent = '← ダンジョン選択に戻る';
+    document.getElementById('back-link').onclick = function(e) {
+        e.preventDefault();
+        location.reload();
+    };
+
+    // 株価データを生成
+    const stockData = generateStockData(startDate, endDate, difficulty);
+
+    // ゲーム状態を初期化
+    gameState = {
+        dungeonId: dungeonId,
+        name: name,
+        symbol: symbol,
+        difficulty: difficulty,
+        xpReward: xpReward,
+        goldReward: goldReward,
+        currentDay: 0,
+        totalDays: stockData.length,
+        cash: 10000,
+        shares: 0,
+        avgPrice: 0,
+        stockData: stockData,
+        tradeHistory: []
+    };
+
+    renderGamePanel();
+}
+
+function renderGamePanel() {
+    const mainContent = document.getElementById('main-content');
+    const currentPrice = gameState.stockData[gameState.currentDay];
+    const prevPrice = gameState.currentDay > 0 ? gameState.stockData[gameState.currentDay - 1] : currentPrice;
+    const priceChange = currentPrice.close - prevPrice.close;
+    const priceChangePercent = (priceChange / prevPrice.close * 100);
+    const totalValue = gameState.cash + (gameState.shares * currentPrice.close);
+    const unrealizedPL = gameState.shares > 0 ? (currentPrice.close - gameState.avgPrice) * gameState.shares : 0;
+
+    const html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h1 style="font-size: 1.25rem; font-weight: 700;">${gameState.name}</h1>
+                <p class="text-muted" style="font-size: 0.75rem;">${gameState.symbol} | ${gameState.stockData[0].date} 〜 ${gameState.stockData[gameState.totalDays-1].date}</p>
+            </div>
+            <span class="difficulty-badge" style="--difficulty-color: ${DIFFICULTY_COLORS[gameState.difficulty]}; --difficulty-bg-color: ${DIFFICULTY_COLORS[gameState.difficulty]}33;">
+                ${DIFFICULTY_LABELS[gameState.difficulty]}
+            </span>
+        </div>
+
+        <!-- 進行状況 -->
+        <div class="progress-bar" style="margin-bottom: 12px;">
+            <div class="progress-fill" style="width: ${((gameState.currentDay + 1) / gameState.totalDays * 100)}%"></div>
+        </div>
+        <p class="text-muted text-center" style="font-size: 0.75rem; margin-bottom: 16px;">
+            Day ${gameState.currentDay + 1} / ${gameState.totalDays}
+        </p>
+
+        <!-- チャート -->
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+
+        <!-- 価格表示 -->
+        <div class="trade-panel">
+            <div class="price-display">
+                <div class="current-price">¥${currentPrice.close.toLocaleString()}</div>
+                <div class="price-change ${priceChange >= 0 ? 'positive' : 'negative'}">
+                    ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} (${priceChangePercent >= 0 ? '+' : ''}${priceChangePercent.toFixed(2)}%)
+                </div>
+            </div>
+
+            <!-- ポジション情報 -->
+            <div class="position-info">
+                <div class="position-item">
+                    <div class="position-label">現金</div>
+                    <div class="position-value">¥${Math.floor(gameState.cash).toLocaleString()}</div>
+                </div>
+                <div class="position-item">
+                    <div class="position-label">保有株数</div>
+                    <div class="position-value">${gameState.shares}株</div>
+                </div>
+                <div class="position-item">
+                    <div class="position-label">平均取得価格</div>
+                    <div class="position-value">${gameState.avgPrice > 0 ? '¥' + gameState.avgPrice.toFixed(2) : '-'}</div>
+                </div>
+                <div class="position-item">
+                    <div class="position-label">評価額</div>
+                    <div class="position-value ${unrealizedPL >= 0 ? 'text-success' : 'text-error'}">
+                        ¥${Math.floor(totalValue).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+
+            <!-- トレードボタン -->
+            <div class="trade-buttons">
+                <button onclick="executeTrade('buy')" class="btn btn-success btn-block" ${gameState.cash < currentPrice.close ? 'disabled' : ''}>
+                    📈 買う
+                </button>
+                <button onclick="executeTrade('sell')" class="btn btn-danger btn-block" ${gameState.shares === 0 ? 'disabled' : ''}>
+                    📉 売る
+                </button>
+                <button onclick="executeTrade('wait')" class="btn btn-secondary btn-block">
+                    ⏸️ 待つ
+                </button>
+            </div>
+
+            <!-- 次の日へ -->
+            <button onclick="nextDay()" class="btn btn-primary btn-block next-day-btn">
+                ⏩ 次の日へ
+            </button>
+        </div>
+
+        <!-- 装備中のインジケーター -->
+        <div class="card" style="padding: 12px 16px; margin-top: 16px;">
+            <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 8px;">装備中</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="background: var(--surface-light); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem;">
+                    ひのきの棒
+                </span>
+            </div>
+        </div>
+    `;
+
+    mainContent.innerHTML = html;
+
+    // クリックイベントリスナーを追加
+    document.querySelectorAll('.dungeon-card[data-dungeon-id]').forEach(card => {
+        card.addEventListener('click', function() {
+            enterDungeonFromElement(this);
+        });
+    });
+
+    // チャートを描画
+    const chartData = gameState.stockData.slice(0, gameState.currentDay + 1);
+    setTimeout(() => updateChart(chartData), 100);
+}
+
+function executeTrade(action) {
+    const currentPrice = gameState.stockData[gameState.currentDay].close;
+
+    if (action === 'buy' && gameState.cash >= currentPrice) {
+        const sharesToBuy = Math.floor(gameState.cash / currentPrice);
+        const cost = sharesToBuy * currentPrice;
+
+        if (gameState.shares > 0) {
+            // 平均取得価格を更新
+            const totalShares = gameState.shares + sharesToBuy;
+            gameState.avgPrice = (gameState.avgPrice * gameState.shares + cost) / totalShares;
+        } else {
+            gameState.avgPrice = currentPrice;
+        }
+
+        gameState.shares += sharesToBuy;
+        gameState.cash -= cost;
+        gameState.tradeHistory.push({
+            day: gameState.currentDay,
+            action: 'buy',
+            price: currentPrice,
+            shares: sharesToBuy
+        });
+    } else if (action === 'sell' && gameState.shares > 0) {
+        const revenue = gameState.shares * currentPrice;
+        gameState.cash += revenue;
+        gameState.tradeHistory.push({
+            day: gameState.currentDay,
+            action: 'sell',
+            price: currentPrice,
+            shares: gameState.shares
+        });
+        gameState.shares = 0;
+        gameState.avgPrice = 0;
+    }
+
+    renderGamePanel();
+}
+
+function nextDay() {
+    gameState.currentDay++;
+
+    if (gameState.currentDay >= gameState.totalDays) {
+        // ダンジョンクリア
+        showDungeonResult();
+    } else {
+        renderGamePanel();
+    }
+}
+
+function showDungeonResult() {
+    const finalPrice = gameState.stockData[gameState.totalDays - 1].close;
+    const finalValue = gameState.cash + (gameState.shares * finalPrice);
+    const profit = finalValue - 10000;
+    const profitPercent = (profit / 10000 * 100);
+
+    // スコア計算
+    let rank = 'D';
+    let xpMultiplier = 0.5;
+    if (profitPercent >= 20) { rank = 'S'; xpMultiplier = 2.0; }
+    else if (profitPercent >= 10) { rank = 'A'; xpMultiplier = 1.5; }
+    else if (profitPercent >= 5) { rank = 'B'; xpMultiplier = 1.2; }
+    else if (profitPercent >= 0) { rank = 'C'; xpMultiplier = 1.0; }
+
+    const earnedXP = Math.floor(gameState.xpReward * xpMultiplier);
+    const earnedGold = Math.floor(gameState.goldReward * (profitPercent >= 0 ? 1 : 0.5));
+
+    const mainContent = document.getElementById('main-content');
+    mainContent.innerHTML = `
+        <div class="result-container" style="text-align: center; padding: 24px;">
+            <h1 style="font-size: 2rem; margin-bottom: 8px;">🎉 ダンジョンクリア！</h1>
+            <p class="text-muted" style="margin-bottom: 24px;">${gameState.name}を攻略しました</p>
+
+            <div class="rank-display" style="font-size: 4rem; margin: 24px 0;">
+                ${rank}
+            </div>
+
+            <div class="card" style="padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;">📊 トレード結果</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">最終資産</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">¥${Math.floor(finalValue).toLocaleString()}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">損益</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;" class="${profit >= 0 ? 'text-success' : 'text-error'}">
+                            ${profit >= 0 ? '+' : ''}¥${Math.floor(profit).toLocaleString()} (${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(1)}%)
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">取引回数</div>
+                        <div style="font-size: 1.25rem;">${gameState.tradeHistory.length}回</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size: 0.75rem;">期間</div>
+                        <div style="font-size: 1.25rem;">${gameState.totalDays}日</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;">🎁 獲得報酬</h3>
+                <div style="display: flex; justify-content: center; gap: 32px;">
+                    <div>
+                        <div style="font-size: 2rem;">⭐</div>
+                        <div style="font-size: 1.25rem; font-weight: 700;">${earnedXP} XP</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem;">💰</div>
+                        <div style="font-size: 1.25rem; font-weight: 700;">${earnedGold} G</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/dungeons" class="btn btn-primary btn-block" style="display: block; text-decoration: none;">
+                ダンジョン選択に戻る
+            </a>
+        </div>
+    `;
+}
+</script>
+{% endblock %}
